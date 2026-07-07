@@ -1,4 +1,4 @@
-# DeathRollMate 1.6.0
+# DeathRollMate 1.6.3
 
 DeathRollMate is a compact Death Roll helper addon for World of Warcraft WotLK 3.3.5a.
 
@@ -12,7 +12,7 @@ DeathRollMate is a compact Death Roll helper addon for World of Warcraft WotLK 3
 - Players with the addon can receive target / party / raid addon-comm invites.
 - Players without the addon can still join by manually rolling the correct range.
 
-## New in 1.6.0
+## New in 1.6.3
 
 - Host-authoritative roll synchronization.
 - Explicit rejected-roll reasons.
@@ -30,7 +30,7 @@ DeathRollMate is a compact Death Roll helper addon for World of Warcraft WotLK 3
 - Audit log.
 - Session restore / discard.
 - DBM-style countdown sounds.
-- Minimap button.
+- Minimap button with custom dice icon.
 - Admin recovery commands.
 - Dry-run test commands.
 
@@ -98,3 +98,22 @@ DeathRollMate is a compact Death Roll helper addon for World of Warcraft WotLK 3
 - Addon communication supports PARTY, RAID and WHISPER, but there is no real `/say` addon broadcast.
 - Nearby/range checks are only reliable for known unit tokens such as party, raid, target or mouseover.
 - The addon does not trade gold automatically; settlement is displayed and tracked manually.
+
+
+## Assets
+
+- `Media/DiceMinimap.tga` is the WoW 3.3.5-compatible minimap texture.
+- `Media/DiceMinimap.png` is included as a source/preview copy for repository use.
+
+
+## 1.6.3
+
+- Minimap button is now created on addon load, without opening the game/config UI.
+- Minimap normal texture assignment was changed to a WotLK-safe path-based call.
+- Added `/dr minimap on` and `/dr minimap off`.
+
+
+## 1.6.3
+
+- Fixed minimap right-click config toggle binding.
+- Made the minimap icon render through explicit child textures with a built-in dice fallback behind the custom DiceMinimap texture.

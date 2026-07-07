@@ -1,8 +1,8 @@
 ## Interface: 30300
 ## Title: DeathRollMate
 ## Notes: Death Roll helper with host-authoritative sync, presets, settlement tracking, timed turns, betting, styled UI and addon communication for WotLK 3.3.5a
-## Author: Mortoize / ChatGPT
-## Version: 1.6.0
+## Author: Mortoize
+## Version: 1.6.3
 ## SavedVariables: DeathRollMateDB
 
 DeathRollMate.lua

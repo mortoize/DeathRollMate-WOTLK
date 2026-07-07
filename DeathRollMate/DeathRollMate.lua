@@ -28,8 +28,10 @@ Important WotLK limitation:
 ]]
 
 local ADDON_NAME = "DeathRollMate"
-local VERSION = "1.6.0"
+local VERSION = "1.6.3"
 local COMM_PREFIX = "DRMATE"
+local MINIMAP_ICON = "Interface\\AddOns\\DeathRollMate\\Media\\DiceMinimap"
+local MINIMAP_FALLBACK_ICON = "Interface\\Icons\\INV_Misc_Dice_01"
 
 local DR = CreateFrame("Frame")
 _G.DeathRollMate = DR
@@ -121,6 +123,7 @@ local SendPlayerJoinedComm
 local BuildGameModeLabel
 local BuildBetModeLabel
 local UpdateMinimapButton
+local ToggleConfig
 local StopTimeout
 
 local function CopyDefaults(target, defaults)
@@ -2671,21 +2674,61 @@ end
 
 local function CreateMinimapButton()
     if ui.minimapButton or not Minimap then return end
+
     local b = CreateFrame("Button", "DeathRollMateMinimapButton", Minimap)
     ui.minimapButton = b
-    b:SetWidth(28)
-    b:SetHeight(28)
+    b:SetWidth(32)
+    b:SetHeight(32)
     b:SetPoint("TOPLEFT", Minimap, "TOPLEFT", 4, -4)
     b:SetFrameStrata("MEDIUM")
-    ApplyBackdrop(b, "panel")
-    local t = b:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    t:SetPoint("CENTER", b, "CENTER", 0, 0)
-    t:SetText("DR")
-    SetFontColor(t, STYLE.accent)
-    b:SetScript("OnClick", function(self, button)
-        if button == "RightButton" then ToggleConfig() else DR:Toggle() end
-    end)
+    b:SetFrameLevel((Minimap:GetFrameLevel() or 0) + 8)
     b:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+
+    -- Draw the icon as explicit child textures instead of relying on
+    -- SetNormalTexture.  Some 3.3.5 clients silently fail custom addon
+    -- TGA normal textures; keeping a built-in fallback underneath ensures
+    -- the minimap button is never blank.
+    local fallback = b:CreateTexture(nil, "BACKGROUND")
+    fallback:SetPoint("CENTER", b, "CENTER", 0, 0)
+    fallback:SetWidth(30)
+    fallback:SetHeight(30)
+    fallback:SetTexture(MINIMAP_FALLBACK_ICON)
+    fallback:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    b.fallbackIcon = fallback
+
+    local icon = b:CreateTexture(nil, "ARTWORK")
+    icon:SetPoint("CENTER", b, "CENTER", 0, 0)
+    icon:SetWidth(30)
+    icon:SetHeight(30)
+    icon:SetTexture(MINIMAP_ICON)
+    icon:SetTexCoord(0.06, 0.94, 0.06, 0.94)
+    b.icon = icon
+
+    local highlight = b:CreateTexture(nil, "HIGHLIGHT")
+    highlight:SetTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
+    highlight:SetPoint("CENTER", b, "CENTER", 0, 0)
+    highlight:SetWidth(48)
+    highlight:SetHeight(48)
+    highlight:SetBlendMode("ADD")
+    b:SetHighlightTexture(highlight)
+
+    b:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_LEFT")
+        GameTooltip:AddLine("DeathRollMate " .. VERSION)
+        GameTooltip:AddLine("Left click: game", 0.88, 0.88, 0.84)
+        GameTooltip:AddLine("Right click: config", 0.88, 0.88, 0.84)
+        GameTooltip:Show()
+    end)
+    b:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+    b:SetScript("OnClick", function(self, button)
+        if button == "RightButton" then
+            if ToggleConfig then ToggleConfig() end
+        else
+            DR:Toggle()
+        end
+    end)
 end
 
 UpdateMinimapButton = function()
@@ -2697,7 +2740,7 @@ end
 
 local CreateUI
 
-local function ToggleConfig()
+ToggleConfig = function()
     CreateUI()
     if ui.configFrame:IsShown() then
         ApplySettingsFromUI()
@@ -2930,6 +2973,7 @@ DR:SetScript("OnEvent", function(self, event, ...)
                 RegisterAddonMessagePrefix(COMM_PREFIX)
             end
             versionPeers[NormalizeName(OwnName())] = VERSION
+            if UpdateMinimapButton then UpdateMinimapButton() end
             if DeathRollMateDB and DeathRollMateDB.lastSession and DeathRollMateDB.lastSession.state and DeathRollMateDB.lastSession.state ~= "IDLE" and not sessionRestorePromptShown then
                 sessionRestorePromptShown = true
                 if StaticPopup_Show then StaticPopup_Show("DEATHROLLMATE_RESTORE") end
@@ -3218,6 +3262,20 @@ SlashCmdList["DEATHROLLMATE"] = function(message)
         return
     end
 
+    if message == "minimap" or message == "minimap on" then
+        DB().minimapEnabled = true
+        if UpdateMinimapButton then UpdateMinimapButton() end
+        Print("Minimap button enabled.")
+        return
+    end
+
+    if message == "minimap off" then
+        DB().minimapEnabled = false
+        if UpdateMinimapButton then UpdateMinimapButton() end
+        Print("Minimap button disabled.")
+        return
+    end
+
     if message == "versions" or message == "version" then
         SendVersionCheck()
         PrintVersionSummary()
@@ -3334,6 +3392,7 @@ SlashCmdList["DEATHROLLMATE"] = function(message)
     Print("/dr bet 10g 5s 0c   - set bet per player")
     Print("/dr mode reverse    - mode: reverse/classic/elimination/free")
     Print("/dr betmode pot     - bet mode: pot/winner/loser")
+    Print("/dr minimap on      - show/hide minimap button")
     Print("/dr versions        - check addon versions in group")
     Print("/dr settlement      - show paid/unpaid settlement panel")
     Print("/dr restore         - restore previous saved session")
